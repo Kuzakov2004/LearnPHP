@@ -32,10 +32,6 @@ abstract class HumanAbstract
 
 class RussianHuman extends HumanAbstract
 {
-    public function __construct(string $name)
-    {
-        parent::__construct($name);
-    }
 
     public function getGreetings(): string
     {
@@ -50,10 +46,6 @@ class RussianHuman extends HumanAbstract
 
 class EnglishHuman extends HumanAbstract
 {
-    public function __construct(string $name)
-    {
-        parent::__construct($name);
-    }
 
     public function getGreetings(): string
     {
