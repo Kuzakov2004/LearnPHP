@@ -5,7 +5,8 @@
 */
 namespace MyProject\Controllers;
 
-use MyProject\Services\Db;
+use MyProject\Models\Articles\Article;
+use MyProject\Models\Users\User;
 use MyProject\View\View;
 
 class ArticlesController
@@ -13,36 +14,48 @@ class ArticlesController
     /** @var View */
     private $view;
 
-    /** @var Db */
-    private $db;
-
-
     public function __construct()
     {
         $this->view = new View(__DIR__ . '/../../../templates');
-        $this->db = new Db();
     }
 
     public function view(int $articleId)
     {
-        $result = $this->db->query(
-        'SELECT articles.*, users.nickname 
-         FROM `articles` 
-         LEFT JOIN `users` ON articles.author_id = users.id 
-         WHERE articles.id = :id;',
-        [':id' => $articleId]
-    );
+        $article = Article::getById($articleId);
 
-        if ($result === []) {
+        if ($article === null) {
         $this->view->renderHtml('errors/404.php', [], 404);
             return;
         }
 
-        $nickname = $this->db->query(
-        'SELECT nickname FROM `users` WHERE id = :author_id;',
-        [':author_id' => $result[0]['author_id']]
-        );
+        $this->view->renderHtml('articles/view.php', [
+            'article' => $article,
+        ]);
+    }
 
-        $this->view->renderHtml('articles/view.php', ['article' => $result[0]]);
+    public function edit(int $articleId): void
+    {
+        /** @var Article $article */
+        $article = Article::getById($articleId);
+
+        if ($article === null) {
+            $this->view->renderHtml('errors/404.php', [], 404);
+            return;
+        }
+
+        $article->setName('Новое название статьи');
+        $article->setText('Новый текст статьи');
+
+        $article->save();
+    }
+
+    public function create()
+    {   
+        $article = new Article;
+
+        $article->setName('Новоя статья название8000');
+        $article->setText('Новая статья hfghfghfgh');
+        $article->setAuthorId(2);
+        $article->save();
     }
 }
