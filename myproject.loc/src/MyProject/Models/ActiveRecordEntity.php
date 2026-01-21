@@ -28,82 +28,14 @@ abstract class ActiveRecordEntity
         return lcfirst(str_replace('_', '', ucwords($source, '_')));
     }
 
-    private function camelCaseToUnderscore(string $source): string
-    {
-        return strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $source));
-    }
-
-    public function save(): void
-    {   
-        $mappedProperties = $this->mapPropertiesToDbFormat();
-        if ($this->id !== null) {
-            $this->update($mappedProperties);
-        } else {
-            $this->insert($mappedProperties);
-        }
-    }
-
-    private function update(array $mappedProperties): void
-    {
-        $columns2params = [];
-        $params2values = [];
-        $index = 1;
-        foreach($mappedProperties as $colum => $value) {
-            $param = ':param' . $index; // param 1
-            $columns2params[] = $colum . ' = ' . $param; // column1 = :param1
-            $params2values[$param] = $value; // [:param1 => value1]
-            $index++;
-        }
-        $sql = 'UPDATE ' . static::getTableName() . ' SET ' . implode(', ', $columns2params) . ' WHERE id = ' . $this->id;
-        $db = Db::getInstanse();
-        $db->query($sql, $params2values, static::class);
-    }
-
-    private function insert(array $mappedProperties): void
-    {   
-        $mappedPropertiesNotNull = array_filter($mappedProperties);
-        $colums = [];
-        $paramsIndex = [];
-        $params2values = [];
-        $index = 1;
-
-        foreach($mappedPropertiesNotNull as $colum => $value) {
-            $param = ':param' . $index;
-            $colums[] = $colum;
-            $paramsIndex[] = $param;
-            $params2values[$param] = $value;
-            $index++;
-        }
-    
-        $sql = 'INSERT INTO ' . static::getTableName() . ' (' . implode(', ', $colums) . ') ' . 'VALUES (' . implode(', ', $paramsIndex) . ')';
-        $db = Db::getInstanse();
-        $db->query($sql, $params2values, static::class);
-    }
-
-    private function mapPropertiesToDbFormat(): array
-    {
-        $reflector = new \ReflectionObject($this);
-        $properties = $reflector->getProperties();
-
-        $mappedProperties = [];
-        foreach($properties as $property) {
-            $propertyName = $property->getName();
-            $propertyNameAsUnderscore = $this->camelCaseToUnderscore($propertyName);
-            $mappedProperties[$propertyNameAsUnderscore] = $this->$propertyName;
-        }
-
-        return $mappedProperties;
-    }
-
     /**
      * @return static[]
      */
     public static function findAll(): array
     {
-        $db = Db::getInstanse();
+        $db = $db = Db::getInstance();
         return $db->query('SELECT * FROM `' . static::getTableName() . '`;', [], static::class);
     }
-
 
     /**
      * @param int $id
@@ -111,7 +43,7 @@ abstract class ActiveRecordEntity
      */
     public static function getById(int $id): ?self
     {
-        $db = Db::getInstanse();
+        $db = $db = Db::getInstance();
         $entities = $db->query(
             'SELECT * FROM `' . static::getTableName() . '` WHERE id=:id;',
             [':id' => $id],
@@ -120,5 +52,113 @@ abstract class ActiveRecordEntity
         return $entities ? $entities[0] : null;
     }
 
+    public function save(): void
+    {
+        $mappedProperties = $this->mapPropertiesToDbFormat();
+        if ($this->id !== null) {
+            $this->update($mappedProperties);
+        } else {
+            $this->insert($mappedProperties);
+        }
+    }
+
+    public function delete(): void
+    {
+        $db = Db::getInstance();
+        $db->query(
+            'DELETE FROM `' . static::getTableName() . '` WHERE id = :id',
+            [':id' => $this->id]
+        );
+        $this->id = null;
+    }
+
+    public static function findOneByColumn(string $columnName, $value): ?self
+    {
+        $db = Db::getInstance();
+        $result = $db->query(
+            'SELECT * FROM `' . static::getTableName() . '` WHERE `' . $columnName . '` = :value LIMIT 1;',
+            [':value' => $value],
+            static::class
+        );
+        if ($result === []) {
+            return null;
+        }
+        return $result[0];
+    }
+
     abstract protected static function getTableName(): string;
+
+    private function update(array $mappedProperties): void
+    {
+        $columns2params = [];
+        $params2values = [];
+        $index = 1;
+        foreach ($mappedProperties as $column => $value) {
+            $param = ':param' . $index; // :param1
+            $columns2params[] = $column . ' = ' . $param; // column1 = :param1
+            $params2values[$param] = $value; // [:param1 => value1]
+            $index++;
+        }
+        $sql = 'UPDATE ' . static::getTableName() . ' SET ' . implode(', ', $columns2params) . ' WHERE id = ' . $this->id;
+        $db = Db::getInstance();
+        $db->query($sql, $params2values, static::class);
+    }
+
+    private function insert(array $mappedProperties): void
+    {
+        $filteredProperties = array_filter($mappedProperties);
+
+        $columns = [];
+        $paramsNames = [];
+        $params2values = [];
+        foreach ($filteredProperties as $columnName => $value) {
+            $columns[] = '`' . $columnName. '`';
+            $paramName = ':' . $columnName;
+            $paramsNames[] = $paramName;
+            $params2values[$paramName] = $value;
+        }
+
+        $columnsViaSemicolon = implode(', ', $columns);
+        $paramsNamesViaSemicolon = implode(', ', $paramsNames);
+
+        $sql = 'INSERT INTO ' . static::getTableName() . ' (' . $columnsViaSemicolon . ') VALUES (' . $paramsNamesViaSemicolon . ');';
+
+        $db = Db::getInstance();
+        $db->query($sql, $params2values, static::class);
+        $this->id = $db->getLastInsertId();
+        $this->refresh();
+    }
+
+    private function refresh(): void
+    {
+        $objectFromDb = static::getById($this->id);
+        $reflector = new \ReflectionObject($objectFromDb);
+        $properties = $reflector->getProperties();
+
+        foreach ($properties as $property) {
+            $property->setAccessible(true);
+            $propertyName = $property->getName();
+            $this->$propertyName = $property->getValue($objectFromDb);
+        }
+    }
+
+    private function mapPropertiesToDbFormat(): array
+    {
+        $reflector = new \ReflectionObject($this);
+        $properties = $reflector->getProperties();
+
+        $mappedProperties = [];
+        foreach ($properties as $property) {
+            $propertyName = $property->getName();
+            $propertyNameAsUnderscore = $this->camelCaseToUnderscore($propertyName);
+            $mappedProperties[$propertyNameAsUnderscore] = $this->$propertyName;
+        }
+
+        return $mappedProperties;
+    }
+
+    private function camelCaseToUnderscore(string $source): string
+    {
+        return strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $source));
+    }
 }

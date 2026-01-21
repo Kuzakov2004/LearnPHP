@@ -1,61 +1,81 @@
 <?php
-/*
-В экшне ArticlesController::view() после получения статьи, добавьте ещё один запрос на получение автора этой статьи из таблицы users. 
-Выведите nickname автора в шаблоне.
-*/
+
 namespace MyProject\Controllers;
 
+use MyProject\Exceptions\NotFoundException;
+use MyProject\Exceptions\UnauthorizedException;
+use MyProject\Exceptions\InvalidArgumentException;
 use MyProject\Models\Articles\Article;
-use MyProject\Models\Users\User;
-use MyProject\View\View;
+use MyProject\Exceptions\ForbiddenException;
 
-class ArticlesController
+class ArticlesController extends AbstractController
 {
-    /** @var View */
-    private $view;
-
-    public function __construct()
-    {
-        $this->view = new View(__DIR__ . '/../../../templates');
-    }
-
-    public function view(int $articleId)
+    public function view(int $articleId): void
     {
         $article = Article::getById($articleId);
 
         if ($article === null) {
-        $this->view->renderHtml('errors/404.php', [], 404);
-            return;
+            throw new NotFoundException();
         }
 
         $this->view->renderHtml('articles/view.php', [
-            'article' => $article,
+            'article' => $article
         ]);
     }
 
     public function edit(int $articleId): void
     {
-        /** @var Article $article */
         $article = Article::getById($articleId);
 
         if ($article === null) {
-            $this->view->renderHtml('errors/404.php', [], 404);
-            return;
+            throw new NotFoundException();
         }
 
-        $article->setName('Новое название статьи');
-        $article->setText('Новый текст статьи');
+        if ($this->user === null) {
+            throw new UnauthorizedException();
+        }
 
-        $article->save();
+        if (!$this->user->isAdmin()) {
+            throw new ForbiddenException('Недостаточно прав');
+        }
+
+        if (!empty($_POST)) {
+            try {
+                $article->updateFromArray($_POST);
+            } catch (InvalidArgumentException $e) {
+                $this->view->renderHtml('articles/edit.php', ['error' => $e->getMessage(), 'article' => $article]);
+                return;
+            }
+
+        header('Location: /articles/' . $article->getId(), true, 302);
+        exit();
     }
 
-    public function create()
-    {   
-        $article = new Article;
+    $this->view->renderHtml('articles/edit.php', ['article' => $article]);
+    }
 
-        $article->setName('Новоя статья название8000');
-        $article->setText('Новая статья hfghfghfgh');
-        $article->setAuthorId(2);
-        $article->save();
+    public function add(): void
+    {
+        if ($this->user === null) {
+            throw new UnauthorizedException();
+        }  
+
+        if (!$this->user->isAdmin()) {
+            throw new ForbiddenException('Недостаточно прав');
+        }
+
+        if (!empty($_POST)) {
+            try {
+                $article = Article::createFromArray($_POST, $this->user);
+            } catch (InvalidArgumentException $e) {
+                $this->view->renderHtml('articles/add.php', ['error' => $e->getMessage()]);
+                return;
+            }
+
+            header('Location: /articles/' . $article->getId(), true, 302);
+            exit();
+        }
+
+        $this->view->renderHtml('articles/add.php');
     }
 }
