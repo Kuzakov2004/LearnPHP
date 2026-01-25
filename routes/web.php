@@ -2,6 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PostController;
+use App\Models\Post;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,5 +17,17 @@ use App\Http\Controllers\PostController;
 |
 */
 
-Route::get('/', [PostController::class, 'index'])->name('posts.index');
-Route::get('/posts/{post:slug}', [PostController::class, 'show'])->name('posts.show');
+Route::resource('posts', PostController::class);
+Route::post('/test-simple', function(Request $request) {
+    // Просто сохраняем без валидации
+    $post = \App\Models\Post::create([
+        'title' => $request->title,
+        'slug' => Str::slug($request->title) . '-' . rand(1000, 9999),
+        'excerpt' => $request->excerpt,
+        'body' => $request->body,
+        'is_published' => $request->has('is_published'),
+        'user_id' => auth()->id() ?? 1,
+    ]);
+    
+    return redirect('/posts')->with('success', 'Работает!');
+});

@@ -16,6 +16,7 @@ class Post extends Model
         'excerpt',
         'body',
         'is_published',
+        'published_at',
         'user_id',
     ];
 
