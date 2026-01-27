@@ -10,7 +10,7 @@
             <h1 class="text-2xl font-bold">Посты</h1>
             <p class="text-gray-400">Управляйте контентом блога</p>
         </div>
-        <a href="{{ route('posts.create') }}" class="btn btn-primary">+ Новый пост</a>
+        <a href="{{ route('admin.posts.create') }}" class="btn btn-primary">+ Новый пост</a>
     </div>
 
     <!-- Filters -->
@@ -47,7 +47,7 @@
                 <tr>
                     <!--<td class="px-4 py-3">{{ $post->id }}</td>-->
                     <td class="px-4 py-3">
-                        <a href="{{ route('posts.show', $post->slug) }}">{{ $post->title }}</a>
+                        <a href="{{ route('admin.posts.show', $post->id) }}">{{ $post->title }}</a>
                     </td>
                     <td class="px-4 py-3">
                         <span class="badge">{{ $post->is_published ? 'Опубликован' : 'Черновик' }}</span>
@@ -55,8 +55,8 @@
                     <td class="px-4 py-3">{{ $post->published_at?->format('d.m.Y') }}</td>
                     <td class="px-4 py-3">
                         <div class="flex items-center gap-2 justify-end">
-                            <a href="{{ route('posts.edit', $post->slug) }}" class="btn btn-outline">Редактировать</a>
-                            <form action="{{ route('posts.destroy', $post->id) }}" method="POST">
+                            <a href="{{ route('admin.posts.edit', $post->id) }}" class="btn btn-outline">Редактировать</a>
+                            <form action="{{ route('admin.posts.destroy', $post->id) }}" method="POST">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-outline cursor-pointer">Удалить</button>
