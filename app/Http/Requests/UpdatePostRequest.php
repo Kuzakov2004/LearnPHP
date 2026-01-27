@@ -27,7 +27,7 @@ class UpdatePostRequest extends FormRequest
             'title' => 'required|min:3',
             'excerpt' => 'required|min:10',
             'body' =>  'required|min:10',
-            'is_published' => 'nullable',
+            'is_published' => 'sometimes|boolean',
             'published_at' => 'nullable',
             'user_id' => 'nullable',
             'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
@@ -48,5 +48,13 @@ class UpdatePostRequest extends FormRequest
             'image.mimes' => 'Изображение должно быть в формате: jpeg, png, jpg, webp.',
             'image.max' => 'Изображение слишком большое.',
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'is_published' => $this->boolean('is_published'),
+            'remove_image' => $this->boolean('remove_image'),
+        ]);
     }
 }
