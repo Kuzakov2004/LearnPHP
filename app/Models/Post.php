@@ -12,6 +12,7 @@ class Post extends Model
     use HasFactory, SoftDeletes;
     protected $fillable = [
         'title',
+        'image',
         'slug',
         'excerpt',
         'body',
@@ -28,5 +29,10 @@ class Post extends Model
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->image ? asset('storage/'. $this->image) : null;
     }
 }

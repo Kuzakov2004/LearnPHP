@@ -8,7 +8,7 @@ use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Illuminate\Support\Str;
 use App\Http\Controllers\Controller;
-
+use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
@@ -19,7 +19,7 @@ class PostController extends Controller
      */
     public function index(): View
     {
-        $posts = Post::latest()->paginate(5);
+        $posts = Post::latest()->paginate(4);
 
         return view('admin.posts.index', compact('posts'));
     }
@@ -50,7 +50,12 @@ class PostController extends Controller
             'is_published' => 'nullable',
             'published_at' => 'nullable',
             'user_id' => 'nullable',
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ]);
+
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('posts', 'public');
+        }
 
         $slugBase = Str::slug($data['title']);
         $slug = $slugBase . '-' . rand(1, 9999);
@@ -103,7 +108,23 @@ class PostController extends Controller
             'is_published' => 'nullable',
             'published_at' => 'nullable',
             'user_id' => 'nullable',
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+            'remove_image' => ['sometimes', 'boolean']
         ]);
+
+        if ($request->boolean('remove_image') && $post->image) {
+            Storage::disk('public')->delete($post->image);
+            $data['image'] = null;
+        }
+
+        if ($request->hasFile('image')) {
+            if ($post->image) {
+                Storage::disk('public')->delete($post->image);
+            }
+            
+            $data['image'] = $request->file('image')->store('post', 'public');
+        }
+
 
         $data['is_published'] = $request->has('is_published') == 'on';
         $data['published_at'] = $request->has('is_published') ? now() : null;

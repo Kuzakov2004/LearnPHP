@@ -38,7 +38,7 @@
                         <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                     </svg>
                 </button>
-                <a href="/" class="flex items-center gap-2">
+                <a href="{{ route('admin.posts.index') }}" class="flex items-center gap-2">
                     <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-gray-900 font-black">A</span>
                     <span class="font-semibold">Admin</span>
                 </a>
@@ -61,7 +61,7 @@
                     </svg>
                     Posts
                 </a>
-                <a href="#" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/5">
+                <a href="{{ route('admin.posts.index') }}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/5">
                     Analytics
                 </a>
             </div>

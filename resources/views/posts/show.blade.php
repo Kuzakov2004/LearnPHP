@@ -15,6 +15,13 @@
             <p class="text-xs text-gray-400 uppercase tracking-wide">
                 Опубликовано: {{ optional($post->published_at ?? $post->created_at)->format('d.m.Y') }}
             </p>
+
+            @if ($post->image)
+                <div class="w-full rounded">
+                    <img src="{{ $post->image_url }}" alt="{{ $post->title }}" class="w-full rounded"/>
+                </div>
+            @endif
+
             <h1 class="mb-4 text-3xl font-bold">{{ $post->title }}</h1>
 
             <div class="mt-6">

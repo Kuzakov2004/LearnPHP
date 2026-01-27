@@ -8,13 +8,24 @@ use App\Models\Post;
 
 class PostController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $posts = Post::where('is_published', 1)
-            ->orderBy('published_at', 'desc')
-            ->paginate(4);
+        $query = Post::query()->where('is_published', true);
 
-            return view('posts.index', compact('posts'));
+        if ($search = trim((string)$request->get('q'))) {
+            $query->where(function($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('excerpt', 'like', "%{$search}%")
+                  ->orWhere('body', 'like', "%{$search}%");
+            });
+        }
+
+        $posts = $query->orderByDesc('published_at')
+            ->orderByDesc('created_at')
+            ->paginate(4)
+            ->withQueryString();;
+
+        return view('posts.index', compact('posts'));
     }
 
     public function show(Post $post): View
