@@ -12,7 +12,7 @@
     <div class="flex flex-col">
         <label class="label">Изображение</label>
         <input type="file" name="image" accept="image/*" class="mt-1 w-full rounded border border-white/10 bg-gray-900/40 p-2 cursor-pointer"/>
-        @error('title') <p class="text-red-400 text-sm mt-1">{{ $message }}</p> @enderror
+        @error('image') <p class="text-red-400 text-sm mt-1">{{ $message }}</p> @enderror
     </div>
 
     @if(isset($post) && $post->image)
