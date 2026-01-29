@@ -44,8 +44,11 @@
                 </a>
             </div>
             <div class="flex items-center gap-3">
-                <span class="hidden sm:inline text-sm text-gray-400">Welcome, Admin</span>
-                <button class="btn btn-outline">Logout</button>
+                <span class="hidden sm:inline text-sm text-gray-400">Привет, Admin</span>
+                <form method="POST" action="{{ route('logout') }}" class="inline">
+                    @csrf
+                    <button type="submit" class="text-sm text-red-600 hover:text-red-500">Выйти</button>
+                </form>
             </div>
         </div>
     </header>

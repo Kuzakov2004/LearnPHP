@@ -12,7 +12,7 @@ use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use App\Repositories\Interfaces\PostRepositoryInterface;
 use Illuminate\Support\Facades\Storage;
-use App\Service\PostService;
+use App\Services\PostService;
 
 
 class PostController extends Controller
